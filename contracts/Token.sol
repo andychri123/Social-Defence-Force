@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
-
 import "./SafeMath.sol";
-
+import "./IERC20.sol";
+import "./Owned.sol";
 // ----------------------------------------------------------------------------
 //
 // Symbol      : SDFT
@@ -15,62 +15,22 @@ import "./SafeMath.sol";
 // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20-token-standard.md
 // ----------------------------------------------------------------------------
 
-contract ERC20Interface {
-
-    function totalSupply() public view returns (uint);
-
-    function balanceOf(address tokenOwner) public view returns (uint balance);
-
-    function allowance(address tokenOwner, address spender) public view returns (uint remaining);
-
-    function transfer(address to, uint tokens) public returns (bool success);
-
-    function approve(address spender, uint tokens) public returns (bool success);
-
-    function transferFrom(address from, address to, uint tokens) public returns (bool success);
-
-
-    event Transfer(address indexed from, address indexed to, uint tokens);
-
-    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);
-
-//    event Burn(address indexed owner, uint tokens);
-
-}
-
-
-
 // ----------------------------------------------------------------------------
 // Owned contract
 // ----------------------------------------------------------------------------
-
-contract Owned {
-
-    address public owner;
-
-    constructor() public {
-        owner = msg.sender;
-    }
-
-    modifier onlyOwner {
-        require(msg.sender == owner);
-        _;
-    }
-}
-
 
 // ----------------------------------------------------------------------------
 // ERC20 Token, with the addition of symbol, name and decimals and an
 // initial fixed supply
 // ----------------------------------------------------------------------------
-
-contract Token is ERC20Interface, Owned {
+contract Token is IERC20, Owned {
 
     using SafeMath for uint;
-    string public symbol;
-    string public  name;
-    uint8 public decimals;
+    string  public _symbol;
+    string  public  _name;
+    uint public _decimals;
     uint public _totalSupply;
+    uint public INITIAL_SUPPLY;
     mapping(address => uint) balances;
     mapping(address => mapping(address => uint)) allowed;
 
@@ -79,12 +39,31 @@ contract Token is ERC20Interface, Owned {
     // ------------------------------------------------------------------------
 
     constructor () public {
-        name     = "Social Defense Force Token"; // solium-disable-line uppercase
-        symbol   = "SDFT"; // solium-disable-line uppercase
-        decimals = 18; // solium-disable-line uppercase
-        _totalSupply = 84000000 * 10**uint(decimals);
+        _name     = "Social Defence Force Token"; // solium-disable-line uppercase
+        _symbol   = "SDFT"; // solium-disable-line uppercase
+        _decimals = 18; // solium-disable-line uppercase
+        INITIAL_SUPPLY = 1000000 * (10 ** uint(_decimals));
+        _totalSupply = INITIAL_SUPPLY;
         balances[owner] = _totalSupply;
         emit Transfer(address(0), owner, _totalSupply);
+    }
+
+    function name() public view returns (string memory) {
+        return _name;
+    }
+
+    /**
+     * @return the symbol of the token.
+     */
+    function symbol() public view returns (string memory) {
+        return _symbol;
+    }
+
+    /**
+     * @return the number of decimals of the token.
+     */
+    function decimals() public view returns (uint) {
+        return _decimals;
     }
 
     // ------------------------------------------------------------------------
@@ -93,13 +72,8 @@ contract Token is ERC20Interface, Owned {
 
     function totalSupply() public view returns (uint) {
 
-        return _totalSupply  - balances[address(0)];
-
+        return _totalSupply;
     }
-
-    // ------------------------------------------------------------------------
-    // Get the token balance for account `tokenOwner`
-    // ------------------------------------------------------------------------
 
     function balanceOf(address tokenOwner) public view returns (uint balance) {
 
@@ -178,11 +152,11 @@ contract Token is ERC20Interface, Owned {
     // Owner can transfer out any accidentally sent ERC20 tokens
     // ------------------------------------------------------------------------
 
-    function transferAnyERC20Token(address tokenAddress, uint tokens) public onlyOwner returns (bool success) {
+   //// function transferAnyERC20Token(address tokenAddress, uint tokens) public onlyOwner returns (bool success) {
 
-        return ERC20Interface(tokenAddress).transfer(owner, tokens);
+ //       return IERC20(tokenAddress).transfer(owner, tokens);
 
-    }
+ //   }
 
     function burn(uint _value) public returns (bool success) {
         require(balances[msg.sender] >= _value);   // Check if the sender has enough
@@ -193,6 +167,7 @@ contract Token is ERC20Interface, Owned {
     }
 
     /**
+
      * Destroy tokens from other account
      *
      * Remove `_value` tokens from the system irreversibly on behalf of `_from`.
@@ -209,11 +184,17 @@ contract Token is ERC20Interface, Owned {
        // emit Burn(_from, _value);
         return true;
     }
-//  security flaw
-    function mint(address _to, uint256 _amount) onlyOwner public returns (bool success) {
-           _totalSupply.add(_amount);
-           balances[_to].add(_amount);
-           emit Transfer(address(this), _to, _amount);
+
+    function mint(address _to, uint am) public onlyOwner returns (bool success){
+          // uint am  = amo * 10 ** uint(_decimals);
+           //uint f = am * 18;
+           uint amo = am * (10 ** uint(_decimals));
+           _totalSupply = _totalSupply+amo;
+           balances[_to] = balances[_to]+ am;
+         //  emit Transfer(0x0, _to, am);
+           emit Transfer(address(this), _to, amo);
            return true;
        }
 }
+
+//-------------------------------------------------------------------------------------------
